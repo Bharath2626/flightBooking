@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IndiSky - Flight Booking</title>
+  <style>
+    :root {
+      --indigo:#0a1a72; --indigo-dark:#071356; --sky:#2a4fd6; --sky-soft:#e8edfb;
+      --bg:#eef1f8; --surface:#ffffff; --ink:#101828; --muted:#667085; --line:#e4e7ec;
+      --ok:#12805c; --ok-soft:#e6f5ef; --danger:#d92d20; --danger-soft:#fdecea;
+      --warn:#b54708; --warn-soft:#fef3e2; --violet:#6941c6;
+      --shadow:0 1px 2px rgba(16,24,40,.06), 0 1px 3px rgba(16,24,40,.10);
+    }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,sans-serif;
+           background:var(--bg); color:var(--ink); -webkit-font-smoothing:antialiased; }
+    header { display:flex; align-items:center; justify-content:space-between; padding:14px 22px;
+             background:linear-gradient(100deg,var(--indigo),var(--sky)); color:#fff;
+             position:sticky; top:0; z-index:5; box-shadow:var(--shadow); }
+    .brand { display:flex; align-items:center; gap:10px; font-weight:800; font-size:20px; letter-spacing:.3px; }
+    .brand .dot { display:inline-flex; align-items:center; justify-content:center; width:34px; height:34px;
+             background:#fff; color:var(--indigo); border-radius:50%; font-size:18px; }
+    .brand small { display:block; font-size:10px; font-weight:600; opacity:.85; letter-spacing:2px; }
+    nav { display:flex; gap:4px; align-items:center; }
+    nav a { font-size:13px; color:#dfe6ff; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:600; }
+    nav a:hover { background:rgba(255,255,255,.15); color:#fff; }
+    nav .who { color:#fff; opacity:.9; font-weight:500; padding:0 6px; }
+    main { max-width:1000px; margin:0 auto; padding:22px 18px 60px; }
+    .card { background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:22px;
+            margin-bottom:18px; box-shadow:var(--shadow); }
+    h2 { font-size:17px; margin:0 0 16px; color:var(--indigo); font-weight:800; }
+    h3 { font-size:14px; margin:0 0 10px; color:var(--ink); font-weight:700; }
+    label { display:block; font-size:12px; color:var(--muted); margin:0 0 5px; font-weight:600; }
+    input, select { width:100%; padding:11px 12px; background:#fff; color:var(--ink); border:1px solid var(--line);
+             border-radius:9px; font-size:14px; transition:border-color .15s, box-shadow .15s; }
+    input:focus, select:focus { outline:none; border-color:var(--sky); box-shadow:0 0 0 3px var(--sky-soft); }
+    .row { display:flex; flex-wrap:wrap; gap:14px; }
+    .row > div { flex:1; min-width:120px; }
+    button { cursor:pointer; border:none; border-radius:9px; padding:11px 18px; font-size:14px; font-weight:700;
+             background:var(--indigo); color:#fff; transition:transform .05s, background .15s, box-shadow .15s; }
+    button:hover { background:var(--indigo-dark); box-shadow:var(--shadow); }
+    button:active { transform:translateY(1px); }
+    button.secondary { background:#fff; color:var(--indigo); border:1px solid var(--line); }
+    button.secondary:hover { background:var(--sky-soft); }
+    button.green { background:var(--ok); color:#fff; }
+    button.green:hover { background:#0c6a4c; }
+    button.danger { background:var(--danger); color:#fff; }
+    button.danger:hover { background:#b42318; }
+    button.small { padding:7px 12px; font-size:12px; }
+    button:disabled { opacity:.5; cursor:not-allowed; box-shadow:none; }
+    .btns { display:flex; gap:10px; flex-wrap:wrap; margin-top:18px; align-items:center; }
+    .link { color:var(--sky); cursor:pointer; font-size:13px; font-weight:600; }
+    .link:hover { text-decoration:underline; }
+    .flight { border:1px solid var(--line); border-radius:12px; padding:16px; margin-bottom:12px; background:#fff;
+              transition:border-color .15s, box-shadow .15s; }
+    .flight:hover { border-color:var(--sky); box-shadow:var(--shadow); }
+    .flight .top { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
+    .price { font-size:24px; font-weight:800; color:var(--indigo); white-space:nowrap; }
+    .tag { display:inline-block; font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px; margin-right:6px; }
+    .tag.direct { background:var(--ok-soft); color:var(--ok); }
+    .tag.connect { background:var(--warn-soft); color:var(--warn); }
+    .leg { font-size:13px; color:var(--muted); margin-top:6px; }
+    .seatgrid { display:flex; flex-wrap:wrap; gap:7px; margin-top:8px; }
+    .seat { width:54px; padding:8px 0; text-align:center; border-radius:8px; font-size:11px; font-weight:600;
+            border:1.5px solid var(--line); background:#fff; color:var(--ink); position:relative; cursor:pointer; }
+    .seat:hover { border-color:var(--sky); }
+    .seat.biz { border-color:var(--violet); color:var(--violet); }
+    .seat.sel { background:var(--indigo); color:#fff; border-color:var(--indigo); }
+    .seat.gone { opacity:.4; text-decoration:line-through; cursor:not-allowed; background:#f2f4f7; }
+    .seat .pax { position:absolute; top:-8px; right:-6px; background:var(--ok); color:#fff; border-radius:10px;
+            font-size:9px; padding:1px 5px; font-weight:700; }
+    .muted { color:var(--muted); font-size:13px; }
+    .status { font-weight:700; }
+    .PENDING,.INITIATED { color:var(--warn); }
+    .CONFIRMED,.SUCCESS { color:var(--ok); }
+    .CANCELED,.FAILED { color:var(--danger); }
+    .REFUNDED { color:var(--sky); }
+    .screen { display:none; }
+    .screen.active { display:block; animation:fade .2s ease; }
+    @keyframes fade { from { opacity:0; transform:translateY(4px);} to { opacity:1; transform:none;} }
+    .stepper { display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap; }
+    .step { font-size:12px; color:var(--muted); padding:7px 14px; border:1px solid var(--line); border-radius:20px;
+            background:#fff; font-weight:600; }
+    .step.on { background:var(--indigo); color:#fff; border-color:var(--indigo); }
+    .step.done { border-color:var(--ok); color:var(--ok); background:var(--ok-soft); }
+    .paxcard { border:1px solid var(--line); border-radius:12px; padding:14px; margin-bottom:12px; background:#fbfcfe; }
+    .summary { background:var(--sky-soft); border:1px solid #d6e0fb; border-radius:12px; padding:14px; margin-bottom:16px; color:var(--ink); }
+    .big-ok { display:flex; align-items:center; justify-content:center; width:74px; height:74px; margin:6px auto;
+              background:var(--ok-soft); color:var(--ok); border-radius:50%; font-size:40px; }
+    #toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:#fff; border:1px solid var(--line);
+             padding:13px 20px; border-radius:10px; font-size:14px; display:none; max-width:90%; z-index:20;
+             box-shadow:0 8px 24px rgba(16,24,40,.16); font-weight:600; }
+    #toast.err { border-left:4px solid var(--danger); color:var(--danger); }
+    #toast.ok { border-left:4px solid var(--ok); color:var(--ok); }
+    .hidden { display:none; }
+    .center { text-align:center; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand"><span class="dot">&#9992;</span><span>IndiSky<small>AIRLINES</small></span></div>
+    <nav id="nav">
+      <a id="navSearch" onclick="startNewSearch()">Search</a>
+      <a id="navBookings" onclick="openBookings()">My bookings</a>
+      <a id="navAdmin" class="hidden" onclick="showScreen('admin')">Admin</a>
+      <span class="who" id="who"></span>
+      <a id="navLogout" class="hidden" onclick="logout()">Logout</a>
+    </nav>
+  </header>
+
+  <main>
+    <!-- STEP 1: AUTH -->
+    <section id="screen-auth" class="screen active">
+      <div class="card" style="max-width:460px; margin:40px auto;">
+        <h2 id="authTitle">Login</h2>
+        <div id="signupName" class="hidden" style="margin-bottom:12px">
+          <label>First name</label><input id="fName" placeholder="Riya" />
+        </div>
+        <div style="margin-bottom:12px"><label>Email</label><input id="email" value="user@flight.com" /></div>
+        <div><label>Password</label><input id="password" type="password" value="user123" /></div>
+        <div class="btns">
+          <button id="authBtn" onclick="doAuth()">Login</button>
+          <span class="link" id="authToggle" onclick="toggleAuth()">New here? Sign up</span>
+        </div>
+        <p class="muted" style="margin-top:14px">Seeded: user@flight.com / user123 &middot; admin@flight.com / admin123</p>
+      </div>
+    </section>
+
+    <!-- STEP 2: SEARCH -->
+    <section id="screen-search" class="screen">
+      <div class="stepper" id="stepper2"></div>
+      <div class="card">
+        <h2>Search flights</h2>
+        <div class="row">
+          <div><label>From</label><input id="from" list="airports" value="DEL" autocomplete="off" /></div>
+          <div><label>To</label><input id="to" list="airports" value="BOM" autocomplete="off" /></div>
+          <div><label>Date</label><input id="date" type="date" value="2026-08-01" /></div>
+          <div><label>Passengers</label><input id="seats" type="number" min="1" max="9" value="1" /></div>
+        </div>
+        <div class="btns">
+          <button onclick="runSearch(1)">Search flights</button>
+          <span class="muted">Tip: DEL &rarr; BLR has no direct flight, so a connecting itinerary is shown.</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- STEP 3: RESULTS -->
+    <section id="screen-results" class="screen">
+      <div class="stepper" id="stepper3"></div>
+      <div class="card">
+        <h2 id="resultsTitle">Results</h2>
+        <div class="row" style="align-items:flex-end">
+          <div style="max-width:170px"><label>Sort by</label>
+            <select id="sortKey" onchange="runSearch(1)"><option>PRICE</option><option>DURATION</option><option>DEPARTURE</option></select></div>
+          <div style="max-width:150px"><label>Order</label>
+            <select id="sortType" onchange="runSearch(1)"><option>ASC</option><option>DESC</option></select></div>
+          <div style="max-width:120px"><label>Per page</label><input id="size" type="number" min="1" value="5" onchange="runSearch(1)" /></div>
+          <div style="text-align:right"><span class="link" onclick="showScreen('search')">Modify search</span></div>
+        </div>
+        <div id="results" style="margin-top:14px"></div>
+        <div class="btns">
+          <button class="secondary small" id="prevBtn" onclick="changePage(-1)">Prev</button>
+          <span class="muted" id="pageInfo"></span>
+          <button class="secondary small" id="nextBtn" onclick="changePage(1)">Next</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- STEP 4: REVIEW + PASSENGERS -->
+    <section id="screen-review" class="screen">
+      <div class="stepper" id="stepper4"></div>
+      <div class="card">
+        <h2>Review flight &amp; passenger details</h2>
+        <div class="summary" id="reviewSummary"></div>
+        <h3>Passengers</h3>
+        <div id="paxCountBar" style="display:flex; align-items:center; gap:10px; margin-bottom:12px"></div>
+        <div id="paxForms"></div>
+        <h3 style="margin-top:16px">Select seats <span class="muted" id="seatHint"></span></h3>
+        <div id="seatArea"></div>
+        <div class="btns">
+          <button class="green" onclick="proceedToPayment()">Continue to payment</button>
+          <button class="secondary" onclick="showScreen('results')">Back to results</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- STEP 5: PAYMENT -->
+    <section id="screen-payment" class="screen">
+      <div class="stepper" id="stepper5"></div>
+      <div class="card" style="max-width:520px; margin:0 auto;">
+        <h2>Payment</h2>
+        <div class="summary" id="paySummary"></div>
+        <h3>Card details</h3>
+        <div style="margin-bottom:12px"><label>Name on card</label><input id="ccName" placeholder="RIYA SHARMA" /></div>
+        <div style="margin-bottom:12px"><label>Card number</label><input id="ccNum" placeholder="4111 1111 1111 1111" maxlength="19" /></div>
+        <div class="row">
+          <div><label>Expiry (MM/YY)</label><input id="ccExp" placeholder="08/29" maxlength="5" /></div>
+          <div><label>CVV</label><input id="ccCvv" type="password" placeholder="123" maxlength="4" /></div>
+        </div>
+        <div class="btns">
+          <button class="green" id="payBtn" onclick="pay()">Pay <span id="payAmt"></span></button>
+          <span class="link" onclick="simulateFailure()">Simulate payment failure</span>
+        </div>
+        <p class="muted" style="margin-top:10px">Demo only - card details are not stored or sent anywhere.</p>
+      </div>
+    </section>
+
+    <!-- STEP 6: SUCCESS -->
+    <section id="screen-success" class="screen">
+      <div class="stepper" id="stepper6"></div>
+      <div class="card center" style="max-width:560px; margin:0 auto;">
+        <div class="big-ok">&#10003;</div>
+        <h2 style="color:var(--accent2)">Booking confirmed</h2>
+        <div class="summary center" id="successBox" style="text-align:left"></div>
+        <div class="btns" style="justify-content:center">
+          <button onclick="openBookings()">View my bookings</button>
+          <button class="secondary" onclick="startNewSearch()">Book another flight</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- MY BOOKINGS -->
+    <section id="screen-bookings" class="screen">
+      <div class="card">
+        <h2>My bookings</h2>
+        <div id="bookings"><span class="muted">Loading...</span></div>
+      </div>
+    </section>
+
+    <!-- ADMIN -->
+    <section id="screen-admin" class="screen">
+      <div class="card">
+        <h2>Add / schedule a flight</h2>
+        <div class="row">
+          <div><label>Flight name</label><input id="aName" value="AI777" /></div>
+          <div><label>From</label><input id="aFrom" list="airports" value="DEL" autocomplete="off" /></div>
+          <div><label>To</label><input id="aTo" list="airports" value="BOM" autocomplete="off" /></div>
+          <div><label>Flight date</label><input id="aDate" type="date" value="2026-08-05" /></div>
+        </div>
+        <div class="row" style="margin-top:12px">
+          <div><label>Departure</label><input id="aDep" type="datetime-local" value="2026-08-05T06:00" /></div>
+          <div><label>Arrival</label><input id="aArr" type="datetime-local" value="2026-08-05T08:15" /></div>
+        </div>
+        <div class="row" style="margin-top:12px">
+          <div><label>Economy seats</label><input id="aEco" type="number" min="0" value="30" /></div>
+          <div><label>Economy price</label><input id="aEcoP" type="number" min="0" value="4200" /></div>
+          <div><label>Business seats</label><input id="aBiz" type="number" min="0" value="6" /></div>
+          <div><label>Business price</label><input id="aBizP" type="number" min="0" value="8800" /></div>
+        </div>
+        <div class="btns"><button class="green" onclick="addFlight()">Add flight</button></div>
+        <div id="adminResult" class="leg" style="margin-top:8px"></div>
+      </div>
+      <div class="card">
+        <h2>Cancel a scheduled flight</h2>
+        <div class="row"><div style="max-width:220px"><label>Scheduled flight id</label><input id="cId" type="number" min="1" placeholder="e.g. 5" /></div></div>
+        <div class="btns"><button class="danger" onclick="cancelFlight()">Cancel flight</button></div>
+        <div id="cancelResult" class="leg" style="margin-top:8px"></div>
+      </div>
+    </section>
+  </main>
+
+  <datalist id="airports"></datalist>
+  <div id="toast"></div>
+
+  <script>
+    // ---------- state ----------
+    let token = localStorage.getItem('token') || null;
+    let currentUser = localStorage.getItem('email') || null;
+    let role = localStorage.getItem('role') || null;
+    let authMode = 'login';
+    let query = null;            // last search query
+    let lastPage = null;         // last results page
+    let itinerary = null;        // selected itinerary
+    let paxCount = 1;            // number of passengers (editable on review screen)
+    let paxData = [];            // preserved passenger form values across re-render
+    let seatsByLeg = {};         // scheduledId -> ordered [seatId]
+    let seatMeta = {};           // seatId -> {seatNo, classType}
+    let booking = null;          // {bookingId, paymentId, amount, seatNumbers}
+
+    const STEPS = ['Search','Results','Passengers','Payment','Done'];
+    const $ = id => document.getElementById(id);
+    function toast(msg, kind){ const t=$('toast'); t.textContent=msg; t.className=kind||''; t.style.display='block';
+      clearTimeout(t._t); t._t=setTimeout(()=>t.style.display='none',4000); }
+
+    function authHeaders(json){ const h={}; if(json) h['Content-Type']='application/json';
+      if(token) h['Authorization']='Bearer '+token; return h; }
+    async function api(method, path, body){
+      const res = await fetch(path,{method,headers:authHeaders(!!body),body:body?JSON.stringify(body):undefined});
+      const text = await res.text(); const data = text?JSON.parse(text):null;
+      if(!res.ok) throw new Error((data&&data.message)||(res.status+' '+res.statusText));
+      return data;
+    }
+    function fmtTime(iso){ if(!iso) return ''; return new Date(iso).toLocaleString('en-IN',
+      {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}); }
+    function fmtDur(m){ return Math.floor(m/60)+'h '+(m%60)+'m'; }
+
+    // ---------- navigation ----------
+    function showScreen(name){
+      document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+      $('screen-'+name).classList.add('active');
+      window.scrollTo(0,0);
+      const stepIndex = {search:0,results:1,review:2,payment:3,success:4}[name];
+      if(stepIndex!==undefined) renderSteppers(stepIndex);
+    }
+    function renderSteppers(active){
+      const html = STEPS.map((s,i)=>`<div class="step ${i===active?'on':(i<active?'done':'')}">${i+1}. ${s}</div>`).join('');
+      ['stepper2','stepper3','stepper4','stepper5','stepper6'].forEach(id=>{ if($(id)) $(id).innerHTML=html; });
+    }
+    function renderNav(){
+      const authed = !!token;
+      $('who').textContent = authed ? (currentUser+(role?' ('+role+')':'')) : '';
+      $('navLogout').classList.toggle('hidden', !authed);
+      $('navSearch').classList.toggle('hidden', !authed);
+      $('navBookings').classList.toggle('hidden', !authed);
+      $('navAdmin').classList.toggle('hidden', role!=='ADMIN');
+    }
+
+    // ---------- auth ----------
+    function toggleAuth(){
+      authMode = authMode==='login'?'signup':'login';
+      $('authTitle').textContent = authMode==='login'?'Login':'Sign up';
+      $('authBtn').textContent = authMode==='login'?'Login':'Create account';
+      $('authToggle').textContent = authMode==='login'?'New here? Sign up':'Have an account? Login';
+      $('signupName').classList.toggle('hidden', authMode!=='signup');
+    }
+    async function doAuth(){
+      try{
+        const body = {email:$('email').value.trim(), password:$('password').value};
+        let d;
+        if(authMode==='signup'){ body.fName=$('fName').value.trim()||'Guest'; d=await api('POST','/api/auth/signup',body); }
+        else d=await api('POST','/api/auth/login',body);
+        token=d.token; currentUser=d.email; role=d.role;
+        localStorage.setItem('token',token); localStorage.setItem('email',currentUser); localStorage.setItem('role',role);
+        renderNav(); toast('Welcome, '+d.email+' ('+d.role+')','ok'); startNewSearch();
+      }catch(e){ toast(e.message,'err'); }
+    }
+    function logout(){
+      token=currentUser=role=null; localStorage.clear(); renderNav(); showScreen('auth');
+    }
+    function requireAuth(){ if(!token){ toast('Please login first.','err'); showScreen('auth'); return false; } return true; }
+
+    // ---------- search ----------
+    function startNewSearch(){ if(!requireAuth()) return; showScreen('search'); }
+    async function runSearch(page){
+      if(!requireAuth()) return;
+      query = {
+        from:$('from').value.trim().toUpperCase(), to:$('to').value.trim().toUpperCase(),
+        date:$('date').value, seats:+$('seats').value||1,
+        sortKey:$('sortKey').value, sortType:$('sortType').value, size:+$('size').value||5, page:page||1
+      };
+      const url=`/api/search?from=${query.from}&to=${query.to}&date=${query.date}&seats=${query.seats}`+
+        `&sortKey=${query.sortKey}&sortType=${query.sortType}&page=${query.page}&size=${query.size}`;
+      try{ lastPage=await api('GET',url); renderResults(); showScreen('results'); }
+      catch(e){ toast(e.message,'err'); }
+    }
+    function changePage(delta){ if(lastPage) runSearch(query.page+delta); }
+    function renderResults(){
+      $('resultsTitle').textContent=`Results: ${query.from} → ${query.to} · ${query.date} · ${query.seats} pax `+
+        `(${lastPage.totalElements} found${lastPage.servedFromCache?', cached':''})`;
+      const box=$('results'); box.innerHTML='';
+      if(!lastPage.content.length){ box.innerHTML='<span class="muted">No flights for this route/date/seats.</span>'; }
+      lastPage.content.forEach((it,idx)=>{
+        const legHtml=it.legs.map(l=>`<div class="leg">${l.flightName}: ${l.fromAirport} ${fmtTime(l.departureTime)} → `+
+          `${l.toAirport} ${fmtTime(l.arrivalTime)}</div>`).join('');
+        const div=document.createElement('div'); div.className='flight';
+        div.innerHTML=`<div class="top"><div>
+            <span class="tag ${it.direct?'direct':'connect'}">${it.direct?'DIRECT':it.stops+' STOP'}</span>
+            <span class="muted">${fmtDur(it.totalDurationMinutes)} · ${it.availableSeats} seats left</span>${legHtml}
+          </div><div style="text-align:right"><div class="price">₹${it.totalPrice}</div>
+          <div class="muted">total</div></div></div>`;
+        const b=document.createElement('button'); b.className='green small'; b.style.marginTop='10px';
+        b.textContent='Select'; b.onclick=()=>selectItinerary(idx); div.appendChild(b); box.appendChild(div);
+      });
+      $('pageInfo').textContent=`Page ${lastPage.pageNumber} of ${lastPage.totalPages||1}`;
+      $('prevBtn').disabled=lastPage.pageNumber<=1; $('nextBtn').disabled=!lastPage.hasNext;
+    }
+
+    // ---------- review + passengers + seats ----------
+    async function selectItinerary(idx){
+      itinerary=lastPage.content[idx]; seatsByLeg={}; seatMeta={}; paxData=[];
+      paxCount=Math.min(Math.max(1, query.seats), itinerary.availableSeats);
+      renderReviewSummary(); renderPaxBar(); renderPaxForms(); showScreen('review');
+      updateSeatHint();
+      const area=$('seatArea'); area.innerHTML='Loading seats...';
+      try{
+        const blocks=[];
+        for(const leg of itinerary.legs){ blocks.push({leg, seats:await api('GET',`/api/flights/${leg.scheduledId}/seats`)}); }
+        area.innerHTML='';
+        blocks.forEach(bk=>{
+          seatsByLeg[bk.leg.scheduledId]=[];
+          const wrap=document.createElement('div');
+          wrap.innerHTML=`<div class="leg" style="margin-top:10px"><b>${bk.leg.flightName}</b> ${bk.leg.fromAirport} → ${bk.leg.toAirport}</div>`;
+          const grid=document.createElement('div'); grid.className='seatgrid';
+          bk.seats.forEach(s=>{
+            seatMeta[s.id]={seatNo:s.seatNo, classType:s.classType};
+            const el=document.createElement('div');
+            el.className='seat '+(s.classType==='BUSINESS'?'biz':'')+(s.available?'':' gone');
+            el.textContent=s.seatNo; el.title=s.classType+' / '+s.seatType; el.dataset.seat=s.id;
+            if(s.available) el.onclick=()=>toggleSeat(el, s.id, bk.leg.scheduledId);
+            grid.appendChild(el);
+          });
+          wrap.appendChild(grid); area.appendChild(wrap);
+        });
+      }catch(e){ area.innerHTML=''; toast(e.message,'err'); }
+    }
+    function renderReviewSummary(){
+      const legs=itinerary.legs.map(l=>`${l.flightName} ${l.fromAirport}→${l.toAirport} (${fmtTime(l.departureTime)} - ${fmtTime(l.arrivalTime)})`).join('<br>');
+      $('reviewSummary').innerHTML=`<b>${itinerary.direct?'Direct':itinerary.stops+'-stop'}</b> · ${fmtDur(itinerary.totalDurationMinutes)} · `+
+        `<span class="price" style="font-size:16px">₹${itinerary.totalPrice}</span> total<br>${legs}`;
+    }
+    function renderPaxBar(){
+      const max=itinerary.availableSeats;
+      $('paxCountBar').innerHTML=
+        `<button class="secondary small" onclick="changePax(-1)" ${paxCount<=1?'disabled':''}>&minus;</button>`+
+        `<b style="min-width:120px; text-align:center">${paxCount} passenger${paxCount>1?'s':''}</b>`+
+        `<button class="secondary small" onclick="changePax(1)" ${paxCount>=max?'disabled':''}>+</button>`+
+        `<span class="muted">max ${max} on this itinerary</span>`;
+    }
+    function updateSeatHint(){
+      $('seatHint').textContent=`(pick ${paxCount} seat${paxCount>1?'s':''} on each flight)`;
+    }
+    function capturePaxData(){
+      paxData=[];
+      for(let i=0;i<paxCount;i++){
+        const get=k=>{ const el=document.querySelector(`.pf[data-i="${i}"][data-k="${k}"]`); return el?el.value:''; };
+        paxData[i]={firstName:get('firstName'), lastName:get('lastName'), age:get('age'), gender:get('gender')};
+      }
+    }
+    function changePax(delta){
+      const max=itinerary.availableSeats;
+      const n=Math.min(Math.max(1, paxCount+delta), max);
+      if(n===paxCount) return;
+      capturePaxData();
+      paxCount=n;
+      // reset seat selection so seats and passengers stay in sync
+      Object.keys(seatsByLeg).forEach(k=>seatsByLeg[k]=[]);
+      document.querySelectorAll('.seat.sel').forEach(el=>{ el.classList.remove('sel'); el.querySelector('.pax')?.remove(); });
+      renderPaxBar(); renderPaxForms(); updateSeatHint();
+    }
+    function renderPaxForms(){
+      const box=$('paxForms'); box.innerHTML='';
+      for(let i=0;i<paxCount;i++){
+        const d=paxData[i]||{};
+        const div=document.createElement('div'); div.className='paxcard';
+        div.innerHTML=`<h3 style="color:var(--accent2)">Passenger ${i+1}</h3>
+          <div class="row">
+            <div><label>First name</label><input class="pf" data-i="${i}" data-k="firstName" value="${d.firstName||''}" /></div>
+            <div><label>Last name</label><input class="pf" data-i="${i}" data-k="lastName" value="${d.lastName||''}" /></div>
+            <div style="max-width:90px"><label>Age</label><input class="pf" data-i="${i}" data-k="age" type="number" min="0" value="${d.age||''}" /></div>
+            <div style="max-width:130px"><label>Gender</label>
+              <select class="pf" data-i="${i}" data-k="gender">
+                <option value="">-</option>
+                <option ${d.gender==='MALE'?'selected':''}>MALE</option>
+                <option ${d.gender==='FEMALE'?'selected':''}>FEMALE</option>
+                <option ${d.gender==='OTHER'?'selected':''}>OTHER</option></select></div>
+          </div>`;
+        box.appendChild(div);
+      }
+    }
+    function toggleSeat(el, seatId, scheduledId){
+      const arr=seatsByLeg[scheduledId];
+      const pos=arr.indexOf(seatId);
+      if(pos>=0){ arr.splice(pos,1); el.classList.remove('sel'); el.querySelector('.pax')?.remove(); }
+      else {
+        if(arr.length>=paxCount){ toast(`Only ${paxCount} seat(s) needed on this flight. Add a passenger or deselect one.`,'err'); return; }
+        arr.push(seatId); el.classList.add('sel');
+      }
+      // relabel seats on this leg with passenger numbers in selection order
+      relabelLeg(scheduledId);
+    }
+    function relabelLeg(scheduledId){
+      const arr=seatsByLeg[scheduledId];
+      document.querySelectorAll(`.seat[data-seat]`).forEach(el=>{
+        // only within this leg's grid: check membership
+      });
+      // simpler: clear pax badges for seats in this leg then re-add
+      arr.forEach((seatId,idx)=>{
+        const el=[...document.querySelectorAll('.seat')].find(e=>+e.dataset.seat===seatId);
+        if(el){ let b=el.querySelector('.pax'); if(!b){ b=document.createElement('span'); b.className='pax'; el.appendChild(b);} b.textContent='P'+(idx+1); }
+      });
+      // remove badges from deselected seats
+      [...document.querySelectorAll('.seat')].forEach(el=>{
+        if(el.classList.contains('sel')) return;
+        el.querySelector('.pax')?.remove();
+      });
+    }
+    function collectPassengers(){
+      const pax=[];
+      for(let i=0;i<paxCount;i++){
+        const get=k=>document.querySelector(`.pf[data-i="${i}"][data-k="${k}"]`).value;
+        const fn=get('firstName').trim();
+        if(!fn) throw new Error('Enter first name for passenger '+(i+1));
+        pax.push({firstName:fn, lastName:get('lastName').trim(), age:get('age')?+get('age'):null, gender:get('gender')||null});
+      }
+      return pax;
+    }
+    async function proceedToPayment(){
+      let pax;
+      try{ pax=collectPassengers(); }catch(e){ toast(e.message,'err'); return; }
+      // validate seat counts per leg
+      for(const leg of itinerary.legs){
+        const n=(seatsByLeg[leg.scheduledId]||[]).length;
+        if(n!==paxCount){ toast(`Select ${paxCount} seat(s) on ${leg.flightName} (${leg.fromAirport}→${leg.toAirport}).`,'err'); return; }
+      }
+      // build passengers payload: passenger k gets the k-th selected seat on each leg
+      const passengers=[];
+      itinerary.legs.forEach(leg=>{
+        seatsByLeg[leg.scheduledId].forEach((seatId,k)=>{
+          passengers.push({seatId, firstName:pax[k].firstName, lastName:pax[k].lastName, age:pax[k].age, gender:pax[k].gender});
+        });
+      });
+      try{
+        booking=await api('POST','/api/bookings',{passengers, paymentMode:'CARD'});
+        renderPaySummary(); showScreen('payment');
+      }catch(e){ toast(e.message,'err'); }
+    }
+
+    // ---------- payment ----------
+    function renderPaySummary(){
+      $('paySummary').innerHTML=`Booking <b>#${booking.bookingId}</b> · seats ${booking.seatNumbers.join(', ')}<br>`+
+        `Amount payable: <span class="price" style="font-size:18px">₹${booking.amount}</span>`;
+      $('payAmt').textContent='₹'+booking.amount;
+    }
+    function validCard(){
+      const num=$('ccNum').value.replace(/\s/g,''); const exp=$('ccExp').value; const cvv=$('ccCvv').value;
+      if(!$('ccName').value.trim()){ toast('Enter name on card.','err'); return false; }
+      if(num.length<12){ toast('Enter a valid card number.','err'); return false; }
+      if(!/^\d{2}\/\d{2}$/.test(exp)){ toast('Expiry must be MM/YY.','err'); return false; }
+      if(cvv.length<3){ toast('Enter the CVV.','err'); return false; }
+      return true;
+    }
+    async function pay(){
+      if(!validCard()) return;
+      $('payBtn').disabled=true;
+      try{
+        const d=await api('POST',`/api/payments/${booking.paymentId}/confirm`,{success:true, modeOfPayment:'CARD'});
+        renderSuccess(d); showScreen('success');
+      }catch(e){ toast(e.message,'err'); } finally { $('payBtn').disabled=false; }
+    }
+    async function simulateFailure(){
+      try{
+        const d=await api('POST',`/api/payments/${booking.paymentId}/confirm`,{success:false});
+        toast(`Payment ${d.paymentStatus}, booking ${d.bookingStatus}, ${d.seatsReleased} seat(s) released.`,'err');
+        startNewSearch();
+      }catch(e){ toast(e.message,'err'); }
+    }
+    function renderSuccess(pay){
+      $('successBox').innerHTML=
+        `<div>Booking <b>#${booking.bookingId}</b> — <span class="status CONFIRMED">CONFIRMED</span></div>
+         <div>Seats: ${booking.seatNumbers.join(', ')}</div>
+         <div>Amount paid: <b>₹${pay.amount}</b> via CARD</div>
+         <div>Payment: <span class="status SUCCESS">${pay.paymentStatus}</span></div>`;
+    }
+
+    // ---------- my bookings ----------
+    async function openBookings(){
+      if(!requireAuth()) return; showScreen('bookings'); $('bookings').innerHTML='<span class="muted">Loading...</span>';
+      try{
+        const list=await api('GET','/api/bookings'); const box=$('bookings');
+        if(!list.length){ box.innerHTML='<span class="muted">No bookings yet.</span>'; return; }
+        box.innerHTML='';
+        list.forEach(b=>{
+          const seatTxt=b.seats.map(s=>`${s.seatNo} (${s.classType[0]}) ${s.passengerName?('- '+s.passengerName+' '):''}`+
+            `${s.flightName} ${s.fromAirport}→${s.toAirport}`).join('<br>');
+          const div=document.createElement('div'); div.className='flight';
+          div.innerHTML=`<div class="top"><div>
+              <div>Booking #${b.bookingId} · <span class="status ${b.status}">${b.status}</span></div>
+              <div class="leg">${seatTxt}</div><div class="leg">Booked: ${fmtTime(b.bookedAt)}</div></div>
+            <div style="text-align:right"><div class="price">₹${b.amount??'-'}</div>
+              <div class="muted">Payment: <span class="status ${b.paymentStatus}">${b.paymentStatus??'-'}</span></div></div></div>`;
+          const btns=document.createElement('div'); btns.className='btns';
+          if(b.paymentStatus==='INITIATED'){
+            const ok=document.createElement('button'); ok.className='green small'; ok.textContent='Pay now';
+            ok.onclick=()=>{ booking={bookingId:b.bookingId,paymentId:b.paymentId,amount:b.amount,seatNumbers:b.seats.map(s=>s.seatNo)};
+              renderPaySummary(); showScreen('payment'); };
+            btns.appendChild(ok);
+          }
+          if(b.status!=='CANCELED'){
+            const c=document.createElement('button'); c.className='danger small'; c.textContent='Cancel booking';
+            c.onclick=()=>cancelBooking(b.bookingId); btns.appendChild(c);
+          }
+          div.appendChild(btns); box.appendChild(div);
+        });
+      }catch(e){ toast(e.message,'err'); }
+    }
+    async function cancelBooking(id){
+      try{ const d=await api('POST',`/api/bookings/${id}/cancel`);
+        toast(`Booking ${id} canceled, payment ${d.paymentStatus??'-'}, ${d.seatsReleased} seat(s) released`,'ok'); openBookings(); }
+      catch(e){ toast(e.message,'err'); }
+    }
+
+    // ---------- admin ----------
+    function dtSec(v){ return v&&v.length===16?v+':00':v; }
+    async function addFlight(){
+      try{
+        const d=await api('POST','/api/admin/flights',{
+          flightName:$('aName').value.trim(), fromAirport:$('aFrom').value.trim().toUpperCase(),
+          toAirport:$('aTo').value.trim().toUpperCase(), flightDate:$('aDate').value,
+          departureTime:dtSec($('aDep').value), arrivalTime:dtSec($('aArr').value),
+          economySeats:+$('aEco').value||0, businessSeats:+$('aBiz').value||0,
+          economyPrice:+$('aEcoP').value||0, businessPrice:$('aBizP').value?+$('aBizP').value:null });
+        $('adminResult').innerHTML=`Created flight <b>#${d.scheduledId}</b> (${d.flightName}: ${d.fromAirport}→${d.toAirport} on ${d.flightDate}), ${d.totalSeats} seats. Cache invalidated.`;
+        toast('Flight added (#'+d.scheduledId+')','ok');
+      }catch(e){ toast(e.message,'err'); }
+    }
+    async function cancelFlight(){
+      const id=$('cId').value; if(!id){ toast('Enter a scheduled flight id.','err'); return; }
+      try{ const d=await api('POST',`/api/admin/flights/${id}/cancel`);
+        $('cancelResult').innerHTML=`Canceled <b>#${d.scheduledId}</b> (${d.flightName}). active=${d.active}. Cache invalidated.`;
+        toast('Flight #'+d.scheduledId+' canceled','ok'); }
+      catch(e){ toast(e.message,'err'); }
+    }
+
+    // ---------- airports ----------
+    async function loadAirports(){
+      try{
+        const list=await api('GET','/api/airports');
+        $('airports').innerHTML=list.map(a=>`<option value="${a.code}">${a.city} - ${a.name}</option>`).join('');
+      }catch(e){ /* non-fatal: pickers just won't have suggestions */ }
+    }
+
+    // ---------- boot ----------
+    renderNav();
+    loadAirports();
+    if(token){ showScreen('search'); } else { showScreen('auth'); }
+  </script>
+</body>
+</html>

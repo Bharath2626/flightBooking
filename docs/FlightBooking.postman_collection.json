@@ -1,0 +1,279 @@
+{
+  "info": {
+    "name": "Flight Booking API",
+    "description": "Search, seats, booking and admin APIs. Run 'Auth > Login (user)' and 'Auth > Login (admin)' first — they auto-save the JWTs into collection variables.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "userToken", "value": "" },
+    { "key": "adminToken", "value": "" },
+    { "key": "bookingId", "value": "" },
+    { "key": "paymentId", "value": "" },
+    { "key": "travelDate", "value": "2026-08-01" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Signup (new user)",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "url": { "raw": "{{baseUrl}}/api/auth/signup", "host": ["{{baseUrl}}"], "path": ["api","auth","signup"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fName\": \"Riya\",\n  \"lName\": \"Sharma\",\n  \"middleName\": \"K\",\n  \"phoneNumber\": \"9876500001\",\n  \"email\": \"riya@example.com\",\n  \"password\": \"secret123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login (user)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var res = pm.response.json();",
+                  "if (res.token) { pm.collectionVariables.set('userToken', res.token); }",
+                  "pm.test('has token', function () { pm.expect(res.token).to.be.a('string'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api","auth","login"] },
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"user@flight.com\",\n  \"password\": \"user123\"\n}" }
+          }
+        },
+        {
+          "name": "Login (admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var res = pm.response.json();",
+                  "if (res.token) { pm.collectionVariables.set('adminToken', res.token); }",
+                  "pm.test('has token', function () { pm.expect(res.token).to.be.a('string'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api","auth","login"] },
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"admin@flight.com\",\n  \"password\": \"admin123\"\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Search",
+      "item": [
+        {
+          "name": "Direct (price asc)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/search?from=DEL&to=BOM&date={{travelDate}}&seats=1&sortKey=PRICE&sortType=ASC&page=1&size=10",
+              "host": ["{{baseUrl}}"], "path": ["api","search"],
+              "query": [
+                { "key": "from", "value": "DEL" },
+                { "key": "to", "value": "BOM" },
+                { "key": "date", "value": "{{travelDate}}" },
+                { "key": "seats", "value": "1" },
+                { "key": "sortKey", "value": "PRICE" },
+                { "key": "sortType", "value": "ASC" },
+                { "key": "page", "value": "1" },
+                { "key": "size", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Duration desc",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/search?from=DEL&to=BOM&date={{travelDate}}&sortKey=DURATION&sortType=DESC",
+              "host": ["{{baseUrl}}"], "path": ["api","search"],
+              "query": [
+                { "key": "from", "value": "DEL" },
+                { "key": "to", "value": "BOM" },
+                { "key": "date", "value": "{{travelDate}}" },
+                { "key": "sortKey", "value": "DURATION" },
+                { "key": "sortType", "value": "DESC" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Connecting (DEL->BLR, no direct)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/search?from=DEL&to=BLR&date={{travelDate}}&seats=2",
+              "host": ["{{baseUrl}}"], "path": ["api","search"],
+              "query": [
+                { "key": "from", "value": "DEL" },
+                { "key": "to", "value": "BLR" },
+                { "key": "date", "value": "{{travelDate}}" },
+                { "key": "seats", "value": "2" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Pagination (page 2, size 1)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/search?from=DEL&to=BOM&date={{travelDate}}&page=2&size=1",
+              "host": ["{{baseUrl}}"], "path": ["api","search"],
+              "query": [
+                { "key": "from", "value": "DEL" },
+                { "key": "to", "value": "BOM" },
+                { "key": "date", "value": "{{travelDate}}" },
+                { "key": "page", "value": "2" },
+                { "key": "size", "value": "1" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Seats",
+      "item": [
+        {
+          "name": "Seat map (all)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/flights/1/seats", "host": ["{{baseUrl}}"], "path": ["api","flights","1","seats"] }
+          }
+        },
+        {
+          "name": "Seat map (available only)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/flights/1/seats?available=true",
+              "host": ["{{baseUrl}}"], "path": ["api","flights","1","seats"],
+              "query": [ { "key": "available", "value": "true" } ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bookings",
+      "item": [
+        {
+          "name": "Book seats",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var res = pm.response.json();",
+                  "if (res.bookingId) { pm.collectionVariables.set('bookingId', res.bookingId); }",
+                  "if (res.paymentId) { pm.collectionVariables.set('paymentId', res.paymentId); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/bookings", "host": ["{{baseUrl}}"], "path": ["api","bookings"] },
+            "body": { "mode": "raw", "raw": "{\n  \"passengers\": [\n    {\"seatId\": 1, \"firstName\": \"Riya\", \"lastName\": \"Sharma\", \"age\": 29, \"gender\": \"FEMALE\"},\n    {\"seatId\": 2, \"firstName\": \"Arjun\", \"lastName\": \"Rao\", \"age\": 34, \"gender\": \"MALE\"}\n  ],\n  \"paymentMode\": \"CARD\"\n}" }
+          }
+        },
+        {
+          "name": "My bookings",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{userToken}}" } ],
+            "url": { "raw": "{{baseUrl}}/api/bookings", "host": ["{{baseUrl}}"], "path": ["api","bookings"] }
+          }
+        },
+        {
+          "name": "Cancel booking (refund + release)",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Authorization", "value": "Bearer {{userToken}}" } ],
+            "url": { "raw": "{{baseUrl}}/api/bookings/{{bookingId}}/cancel", "host": ["{{baseUrl}}"], "path": ["api","bookings","{{bookingId}}","cancel"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payments",
+      "item": [
+        {
+          "name": "Confirm payment (SUCCESS)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/payments/{{paymentId}}/confirm", "host": ["{{baseUrl}}"], "path": ["api","payments","{{paymentId}}","confirm"] },
+            "body": { "mode": "raw", "raw": "{\n  \"success\": true,\n  \"modeOfPayment\": \"UPI\"\n}" }
+          }
+        },
+        {
+          "name": "Confirm payment (FAILURE)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/payments/{{paymentId}}/confirm", "host": ["{{baseUrl}}"], "path": ["api","payments","{{paymentId}}","confirm"] },
+            "body": { "mode": "raw", "raw": "{\n  \"success\": false\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Create flight",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/admin/flights", "host": ["{{baseUrl}}"], "path": ["api","admin","flights"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"flightName\": \"AI777\",\n  \"fromAirport\": \"DEL\",\n  \"toAirport\": \"BOM\",\n  \"flightDate\": \"2026-08-05\",\n  \"departureTime\": \"2026-08-05T06:00:00\",\n  \"arrivalTime\": \"2026-08-05T08:15:00\",\n  \"economySeats\": 30,\n  \"businessSeats\": 6,\n  \"economyPrice\": 4200,\n  \"businessPrice\": 8800\n}"
+            }
+          }
+        },
+        {
+          "name": "Cancel flight",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Authorization", "value": "Bearer {{adminToken}}" } ],
+            "url": { "raw": "{{baseUrl}}/api/admin/flights/2/cancel", "host": ["{{baseUrl}}"], "path": ["api","admin","flights","2","cancel"] }
+          }
+        }
+      ]
+    }
+  ]
+}
