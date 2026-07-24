@@ -13,20 +13,50 @@ is **logged**.
 - MySQL 8 (runtime) / H2 (tests)
 - JWT auth (jjwt), BCrypt passwords
 
-## Running
+## Setup on a new machine
 
+### Prerequisites
+- **JDK 17** (Spring Boot 4.1 requires Java 17+) — verify with `java -version`.
+- **Git** to clone.
+- **Maven is NOT required** — the repo ships the Maven wrapper (`./mvnw`), which downloads Maven itself.
+- **MySQL 8** — only for the real-DB option below; the H2 quick-start needs no database.
+- Internet access on first run (the wrapper downloads Maven + dependencies from Maven Central).
+
+### 1. Clone
 ```bash
-# 1. Start MySQL and (optionally) set overrides — sensible localhost defaults are built in:
-export DB_URL="jdbc:mysql://localhost:3306/flight_booking?createDatabaseIfNotExist=true&serverTimezone=UTC"
-export DB_USER=root
-export DB_PASSWORD=root
-
-# 2. Run
-./mvnw spring-boot:run
+git clone https://github.com/Bharath2626/flightBooking.git
+cd flightBooking
 ```
 
-Schema is created by Hibernate (`ddl-auto=update`). On first boot (empty DB) `DataSeeder`
-inserts sample users and flights.
+### 2. Run — pick one
+
+**Option A — zero-DB quick start (H2), easiest.** No database install; uses a local file
+H2 DB and auto-seeds users + the airport/flight network.
+```bash
+./mvnw spring-boot:run -Dspring-boot.run.profiles=h2
+# Windows: mvnw.cmd spring-boot:run -Dspring-boot.run.profiles=h2
+```
+
+**Option B — real MySQL.** Create the DB + user once:
+```sql
+CREATE DATABASE IF NOT EXISTS flight_booking;
+CREATE USER IF NOT EXISTS 'flightapp'@'localhost' IDENTIFIED BY 'flightapp123';
+GRANT ALL PRIVILEGES ON flight_booking.* TO 'flightapp'@'localhost';
+FLUSH PRIVILEGES;
+```
+Then run (env vars override the defaults in `application.properties`):
+```bash
+DB_URL="jdbc:mysql://localhost:3306/flight_booking?createDatabaseIfNotExist=true&serverTimezone=Asia/Kolkata" \
+DB_USER=flightapp DB_PASSWORD=flightapp123 \
+./mvnw spring-boot:run
+```
+Schema is created by Hibernate (`ddl-auto=update`); `DataSeeder` loads sample data on first
+boot (empty DB) — no manual SQL needed.
+
+### 3. Access
+- **Portal (UI):** http://localhost:8080
+- **H2 console** (H2 profile only): http://localhost:8080/h2-console — JDBC URL
+  `jdbc:h2:file:./data/flight_booking;MODE=MySQL;AUTO_SERVER=TRUE`, user `sa`, blank password.
 
 **Seeded logins**
 | Role  | Email             | Password  |
@@ -34,15 +64,28 @@ inserts sample users and flights.
 | ADMIN | admin@flight.com  | admin123  |
 | USER  | user@flight.com   | user123   |
 
-**Seeded flights (date 2026-08-01):** `DEL→BOM` has two direct options; `DEL→BLR` has
-**no direct flight**, so search returns the connecting itinerary `DEL→HYD→BLR`.
+**Seeded network (dates 2026-08-01 / 08-02):** 20 Indian airports as a hub-and-spoke network.
+Hub↔hub (e.g. `DEL→BLR`) is **direct**; spoke↔spoke (e.g. `PNQ→GAU`) returns a **connecting**
+itinerary via a hub.
+
+### 4. Run tests
+```bash
+./mvnw test    # context load + concurrency tests (single-seat and overlapping multi-seat)
+```
+
+### Note: Maven mirror
+If a machine has a restrictive `~/.m2/settings.xml` that routes downloads through a private
+mirror (e.g. a corporate JFrog), you may see `403` errors. A clean machine pulls from Maven
+Central directly and just works; otherwise be on that VPN or pass a Central-only settings file
+via `./mvnw -s central-settings.xml ...`.
 
 ## Architecture highlights
 
 ### Precomputed search cache
 - `ItineraryBuilder` loads a day's active legs once, builds an adjacency graph, and does a
-  DFS to produce **direct and connecting itineraries** (up to 3 legs / 2 stops), honouring
-  a **min connection time (45m)** and **max layover (6h)**. Each itinerary carries its total
+  **BFS** to produce **direct and connecting itineraries** (up to 3 legs / 2 stops), honouring
+  a **min connection time (45m)** and **max layover (6h)**. BFS discovers fewer-stop options
+  first, so the itinerary cap keeps the best ones. Each itinerary carries its total
   price, total duration, and the minimum available-seat count across its legs.
 - `ItineraryCache` stores those lists in a `ConcurrentHashMap` keyed by `(from, to, date)`.
   - **Hourly refresh:** `@Scheduled(fixedRateString = "${app.cache.refresh-interval-ms}")`
